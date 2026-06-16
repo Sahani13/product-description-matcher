@@ -25,7 +25,7 @@ existing_desc = existing["Description"].astype(str).tolist()
 
 results = []
 
-# Threshold (important)
+# Threshold (set default to the 60)
 THRESHOLD = 60
 
 for _, row in new.iterrows():
