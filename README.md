@@ -16,7 +16,9 @@ A Streamlit-based application that compares new product descriptions with existi
 - Cloud deployment
 
 ## Run Locally
-
 pip install -r requirements.txt
-
 python -m streamlit run ui_app.py
+
+
+## Live Demo
+https://appuct-description-matcher-3jjyffuhtx2rfvubddj9mf.streamlit.app
