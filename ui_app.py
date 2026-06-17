@@ -14,16 +14,20 @@ if existing_file and new_file:
     existing = pd.read_excel(existing_file)
     new = pd.read_excel(new_file)
 
+    # Clean column names
     existing.columns = existing.columns.str.strip()
     new.columns = new.columns.str.strip()
 
+    # Standardize both possible formats
     existing = existing.rename(columns={
         "Material": "Code",
+        "MaterialCode": "Code",
         "Material Description": "Description"
     })
 
     new = new.rename(columns={
         "MaterialCode": "Code",
+        "Material": "Code",
         "Material Description": "Description"
     })
 
