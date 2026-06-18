@@ -17,6 +17,7 @@ A Streamlit-based application that compares new product descriptions with existi
 
 ## Run Locally
 pip install -r requirements.txt
+
 python -m streamlit run ui_app.py
 
 
