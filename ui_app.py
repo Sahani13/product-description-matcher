@@ -42,24 +42,27 @@ st.table({
 # =========================
 # UPLOAD SECTION
 # =========================
-st.subheader("📁 Upload Excel Files")
-
-st.write("""
-Please ensure your Excel files follow the correct format.
-
-✔ Only .xlsx files  
-✔ First sheet only  
-✔ No merged cells  
-✔ Correct column names required  
-""")
+st.subheader("📁 Upload Excel Files Here")
 
 existing_file = st.file_uploader("Upload Existing Products File", type=["xlsx"])
 new_file = st.file_uploader("Upload New Products File", type=["xlsx"])
 
+# =========================
+#Threshold slider
+# =========================
 threshold = st.slider("🎯 Similarity Threshold", 0, 100, 60)
 
+match_mode = st.radio(
+    "Match Mode",
+    [
+        "Best Match Only",
+        "Top 10 Matches",
+        "All Matches Above Threshold"
+    ]
+)
+
 # =========================
-# PROCESSING
+# PROCESSING 
 # =========================
 if existing_file and new_file:
 
@@ -72,7 +75,7 @@ if existing_file and new_file:
     new.columns = new.columns.str.strip()
 
     # =========================
-    # VALIDATION (SAFE)
+    # VALIDATION 
     # =========================
     if (
         "Material" not in existing.columns
@@ -111,30 +114,90 @@ if existing_file and new_file:
         "Material Description": "Description"
     })
 
+    # =========================
     # Convert to list
+    # =========================
     existing_list = existing["Description"].astype(str).tolist()
 
     results = []
 
-    # =========================
-    # MATCHING LOGIC
-    # =========================
     for _, row in new.iterrows():
 
         new_desc = str(row["Description"])
 
-        match = process.extractOne(
-            new_desc,
-            existing_list,
-            scorer=fuzz.token_sort_ratio
-        )
+    # =========================
+    # BEST MATCH ONLY
+    # =========================
+        if match_mode == "Best Match Only":
 
-        if match and match[1] >= threshold:
-            results.append({
-                "New Product": new_desc,
-                "Best Match": match[0],
-                "Similarity (%)": match[1]
-            })
+            match = process.extractOne(
+                new_desc,
+                existing_list,
+                scorer=fuzz.token_sort_ratio
+            )
+
+            if match and match[1] >= threshold:
+
+                results.append({
+                    "New Product": new_desc,
+                    "Rank": 1,
+                    "Matched Product": match[0],
+                    "Similarity (%)": round(match[1], 2)
+                })
+
+    # =========================
+    # TOP 10 MATCHES
+    # =========================
+        elif match_mode == "Top 10 Matches":
+
+            matches = process.extract(
+                new_desc,
+                existing_list,
+                scorer=fuzz.token_sort_ratio,
+                limit=10
+            )
+
+            rank = 1
+
+            for matched_desc, score, _ in matches:
+
+                if score >= threshold:
+
+                    results.append({
+                        "New Product": new_desc,
+                        "Rank": rank,
+                        "Matched Product": matched_desc,
+                        "Similarity (%)": round(score, 2)
+                    })
+
+                    rank += 1
+
+    # =========================
+    # ALL MATCHES ABOVE THRESHOLD
+    # =========================
+        elif match_mode == "All Matches Above Threshold":
+
+            matches = process.extract(
+                new_desc,
+                existing_list,
+                scorer=fuzz.token_sort_ratio,
+                limit=None
+            )
+
+            rank = 1
+
+            for matched_desc, score, _ in matches:
+
+                if score >= threshold:
+
+                    results.append({
+                        "New Product": new_desc,
+                        "Rank": rank,
+                        "Matched Product": matched_desc,
+                        "Similarity (%)": round(score, 2)
+                    })
+
+                    rank += 1
 
     df = pd.DataFrame(results)
 
@@ -142,7 +205,14 @@ if existing_file and new_file:
     # OUTPUT
     # =========================
     st.subheader("📊 Matching Results")
-    st.dataframe(df, use_container_width=True)
+
+    st.success(f"Found {len(df)} matching records")
+
+    st.dataframe(   
+        df,
+        use_container_width=True,
+        hide_index=True
+    )
 
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
@@ -151,3 +221,10 @@ if existing_file and new_file:
         "product_matching_report.csv",
         "text/csv"
     )
+
+
+
+
+
+
+
